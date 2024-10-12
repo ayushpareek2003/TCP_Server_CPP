@@ -7,9 +7,9 @@ This project implements a simple TCP server in C++ that listens for incoming cli
 - Serves static HTML content
 
 ## Installation
-1. Clone the repository.
-2. Open the project in Visual Studio.
-3. Compile and run the server.
+1. Without CMake, folder containg server cpp use the command '''bash cl /EHsc server.cpp src/http_tcp.cpp /I inc ws2_32.lib '''
+
+   
 
 ## Usage
 Connect to the server using a web browser or a tool like `curl` to see the served webpage.
