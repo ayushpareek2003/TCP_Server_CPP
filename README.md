@@ -7,7 +7,10 @@ This project implements a simple TCP server in C++ that listens for incoming cli
 - Serves static HTML content
 
 ## Installation
-1. Without CMake, folder containg server cpp use the command '''bash cl /EHsc server.cpp src/http_tcp.cpp /I inc ws2_32.lib '''
+1. Without CMake, folder containg server cpp use the command
+    '''bash
+   cl /EHsc server.cpp src/http_tcp.cpp /I inc ws2_32.lib
+    '''
 
    
 
