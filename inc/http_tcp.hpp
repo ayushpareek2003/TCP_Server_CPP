@@ -8,15 +8,17 @@
 
 
 namespace http{
+
+    
     class TCPServer{
         public:
-            TCPServer(std::string ip_address,int port);
+            TCPServer(std::string ip_address,int port,std::string filename);
             ~TCPServer();
 
             int startServer();
             void closeServer();
             void acceptConnection(SOCKET &new_socket);
-            std::string buildResponse();
+            std::string buildResponse(std:: string &filename);
             void sendResponse();
             void startlisten();
 
@@ -31,6 +33,7 @@ namespace http{
             struct sockaddr_in m_socketAddress;
             int m_socketAddress_len;
             std::string m_serverMessage;
+            
 
             WSADATA m_wsaData;
 
@@ -40,8 +43,5 @@ namespace http{
 
     
 }
-
-
-
 
 #endif

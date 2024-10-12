@@ -1,6 +1,7 @@
-#include <inc/http_tcp.hpp>
+#include "http_tcp.hpp"
 #include <iostream>
 #include <sstream>
+#include <fstream>
 
 
 #define BUFFER_SIZE 30720
@@ -8,12 +9,12 @@
 
 
 
-http::TCPServer::TCPServer(std::string ip_address,int port):m_ip_address(ip_address),
+http::TCPServer::TCPServer(std::string ip_address,int port,std::string filename):m_ip_address(ip_address),
     m_port(port),m_socket(),m_new_socket(),m_incomingMessage(),m_socketAddress(),
-    m_socketAddress_len(sizeof(m_socketAddress)),m_serverMessage(buildResponse()){
+    m_socketAddress_len(sizeof(m_socketAddress)),m_serverMessage(buildResponse(filename)){
 
     m_socketAddress.sin_family=AF_INET;
-    m_socketAddress.sin_port=htons(m_port);
+    m_socketAddress.sin_port=htons(port);
     m_socketAddress.sin_addr.s_addr=inet_addr(m_ip_address.c_str());
 
     if(startServer()!=0){
@@ -26,8 +27,6 @@ http::TCPServer::TCPServer(std::string ip_address,int port):m_ip_address(ip_addr
 
 http::TCPServer::~TCPServer(){
     closeServer();
-
-    
 }
 
 int http::TCPServer::startServer(){
@@ -64,40 +63,46 @@ void http::TCPServer::closeServer(){
 
 }
 
-void http::TCPServer::startlisten(){
-    if(listen(m_socket,20)<20){
-        std::cout<<"Failed"<<std::endl;
-        return ;
+void http::TCPServer::startlisten() {
+    if (listen(m_socket, 20) < 0) {
+        std::cout << "Failed to listen" << std::endl;
+        return;
     }
+
     std::ostringstream ss;
-    ss<<"\n*** Listening on ADDRESS: "<<inet_ntoa(m_socketAddress.sin_addr)<<"PORT: "<<ntohs(m_socketAddress.sin_port)<<
-    " ***\n\n"; //
+    ss << "\n*** Listening on ADDRESS: " << inet_ntoa(m_socketAddress.sin_addr)
+       << " PORT: " << ntohs(m_socketAddress.sin_port) << " ***\n\n";
+    std::cout << ss.str() << std::endl;
 
     int bytesReceived;
-    
-    while(true){
-        std::cout<<"Waiting for a new connection"<<std::endl;
+    char buffer[BUFFER_SIZE] = {0};
 
-        acceptConnection(m_new_socket);
+    while (true) {
+        std::cout << "Waiting for a new connection" << std::endl;
 
-        char buffer[BUFFER_SIZE]={0};
-
-        bytesReceived=recv(m_new_socket,buffer,BUFFER_SIZE,0); //
-
-        if(bytesReceived<0){
-            std::cout<<"Failed to Receive"<<std::endl;
-
+        m_new_socket = accept(m_socket, nullptr, nullptr);
+        if (m_new_socket < 0) {
+            std::cout << "Failed to accept connection" << std::endl;
+            continue;
         }
 
-        std::ostringstream ss;
-        ss<<"------ Received-------"<<std::endl; 
+        bytesReceived = recv(m_new_socket, buffer, BUFFER_SIZE, 0);
 
-        sendResponse();
+        if (bytesReceived == 0) {
+            std::cout << "Connection closed by client" << std::endl;
+        } else if (bytesReceived < 0) {
+            std::cout << "Failed to receive data" << std::endl;
+        } else {
+            std::ostringstream ss;
+            ss << "------ Received -------" << std::endl;
+            std::cout << ss.str() << std::endl;
+
+           
+            sendResponse();
+        }
 
         closesocket(m_new_socket);
-
     }
-
 }
 
 void http::TCPServer::acceptConnection(SOCKET &new_socket){
@@ -112,13 +117,28 @@ void http::TCPServer::acceptConnection(SOCKET &new_socket){
 
 }
 
-std::string http::TCPServer::buildResponse(){
-    std::string htmlfile="yha daalunga m abhi ";
+std::string http::TCPServer::buildResponse(std::string &filename){
+   
+    std::ifstream file(filename);
+    if (!file.is_open()) {
+        std::cerr << "Failed to open file: " << filename << std::endl;
+        return ""; 
+    }
+
+  
+    std::ostringstream fileContentStream;
+    fileContentStream << file.rdbuf(); 
+    std::string htmlfile = fileContentStream.str();
+
+   
+    file.close();
+
+    
     std::ostringstream ss;
-
-    ss << "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: " << htmlfile.size() << "\n\n"
-           << htmlfile; // why this??
-
+    ss << "HTTP/1.1 200 OK\n"
+       << "Content-Type: text/html\n"
+       << "Content-Length: " << htmlfile.size() << "\n\n"
+       << htmlfile;
 
     return ss.str();
 
